@@ -13,5 +13,5 @@ Consider this CSC380-Artificial-Intelligence the root directory. To run the Nth 
 > python3 HWN/main.py
 
 Content of this repository:
-utils.py -- general purpose utility functions used through the semester
-HWN/ -- directory containing particular homework assignment
+- HWN/ -- directory containing particular homework assignment
+- utils.py -- general purpose utility functions used through the semester
