@@ -31,10 +31,27 @@ def two():
 	
 	print("1.2")
 
+	# The X, y data format is consistent with sklearn and other popular
+		# ML and data science libraries. In this format, each example is
+		# a row and columns represent features/attributes. The y array
+		# corresponds to each row of X.
+	X = np.array([
+		[1, 1, 0],
+		[1, 0, 1],
+		[0, 1, 0],
+		[1, 1, 1],
+		[1, 1, 0]
+	])
 	y = np.array([0, 0, 0, 1, 1])
 
+	print(X)
+	print(y)
+
+	# We could also use scipy.sparse.csr_matrix if the data contained
+		# mostly 0s, or any other sparse matrix format.
+
 def main():
-	one()
+	two()
 
 if __name__ == "__main__":
 	main()
