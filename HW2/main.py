@@ -22,18 +22,10 @@ def results_df(labels, pred, probas):
 	})
 	return df
 
-def plot_iris(save_file, y=None):
-	if y is None:
-		X, y = load_iris(return_X_y=True, as_frame=True)
-	else:
-		X, _ = load_iris(return_X_y=True, as_frame=True)
+def plot_iris(save_file, X, y):
 
-	X = X.rename(columns=
-		{"sepal length (cm)" : "SL", "sepal width (cm)" : "SW",
-		"petal length (cm)" : "PL",  "petal width (cm)" : "PW"}
-	)
+	features = ["SL", "SW", "PL", "PW"]
 
-	features = X.columns.tolist()
 	fig, axs = plt.subplots(4, 4)
 
 	for i in range(len(features)):
@@ -46,8 +38,7 @@ def plot_iris(save_file, y=None):
 					colors.append('blue')
 				elif label == 2:
 					colors.append('green')
-			axs[i, j].scatter(X[X.columns[i]].to_numpy(), 
-				X[X.columns[j]].to_numpy(), c=colors, marker=".")
+			axs[i, j].scatter(X[:,i], X[:,j], c=colors, marker=".")
 			axs[i, j].set_title(f"{features[j]} vs {features[i]}")
 
 	for ax in axs.flat:
@@ -98,11 +89,11 @@ def one_point_three():
 
 	pred = clf.predict(X_test)
 	probas = clf.predict_proba(X_test).transpose()
-
 	print(results_df(y_test, pred, probas))
 
 	# Plot the iris predictions
-	plot_iris("iris_bayes.png", clf.predict(X))
+	plot_iris("HW2/iris_bayes_pred.png", X_test, pred)
+	plot_iris("HW2/iris_bayes_truth.png", X_test, y_test)
 
 def one_point_four():
 
@@ -130,11 +121,15 @@ def one_point_four():
 
 	print(f"Average CV accuracy: {mean(scores)}")
 
-	# Plot the iris predictions
-	plot_iris("iris_svm.png", clf.predict(X))
+	pred = clf.predict(X_test)
+	probas = clf.decision_function(X_test).transpose()
+	print(results_df(y_test, pred, probas))
+
+	# Plot the iris predictions.
+	plot_iris("HW2/iris_svm_pred.png", X_test, pred)
+	plot_iris("HW2/iris_svm_truth.png", X_test, y_test)
 
 if __name__ == "__main__":
-	plot_iris("iris_default.png")
 	one_point_two()
 	one_point_three()
 	one_point_four()
