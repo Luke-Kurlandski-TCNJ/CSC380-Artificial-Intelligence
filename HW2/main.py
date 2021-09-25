@@ -1,3 +1,5 @@
+from pathlib import Path
+import re
 from statistics import mean
 
 import pandas as pd
@@ -22,6 +24,19 @@ def results_df(labels, pred, probas):
 		'class 2 prob' : probas[2],
 	})
 	return df
+
+def clean_data(path):
+	new_path = Path(path.as_posix().replace(path.stem, path.stem + "_clean"))
+	new_lines = []
+	with open(path, 'r') as f_r:
+		for l in f_r:
+			new_l = l.lstrip()
+			new_l = new_l.replace("  ", ",")
+			new_l = new_l.replace(" ", ",")
+			new_lines.append(new_l)
+
+	with open(new_path, 'w') as f_w:
+		f_w.writelines(new_lines)
 
 def plot_iris(save_file, X, y):
 
@@ -155,9 +170,41 @@ def one_point_five():
 
     print(f"Digits | Average CV accuracy: {mean(scores)}")
 
+def one_point_six():
+	path_to_dataset = Path("/home/hpc/kurlanl1/CSC-380/CSC380-Artificial-Intelligence/UCIHARDataset/")
+
+	clean_data(path_to_dataset / "train/X_train.txt")
+	clean_data(path_to_dataset / "test/X_test.txt")
+
+	X_train = np.genfromtxt(path_to_dataset / "train/X_train_clean.txt", delimiter=',')
+	y_train = np.genfromtxt(path_to_dataset / "train/y_train.txt", delimiter=',')
+	X_test = np.genfromtxt(path_to_dataset / "test/X_test_clean.txt", delimiter=',')
+	y_test = np.genfromtxt(path_to_dataset / "test/y_test.txt", delimiter=',')
+
+	# The linear SVM classifier.
+	clf = LinearSVC(max_iter=100000)
+
+	# A K-Folds cross-validator that helps with partitioning the data.
+	kf = KFold(n_splits=5)
+
+	# Stores the accuracy of the classifier on each cross fold.
+	scores = []
+
+	# Perform the cross validation.
+	for train_index, test_index in kf.split(X_train):
+		X_trainCV, X_testCV = X_train[train_index], X_train[test_index]
+		y_trainCV, y_testCV = y_train[train_index], y_train[test_index]
+		clf.fit(X_trainCV, y_trainCV)
+		score = clf.score(X_testCV, y_testCV)
+		scores.append(score)
+
+	print(f"Digits | Average CV accuracy: {mean(scores)}")
+
+	print(f"Net model accuracy: {clf.score(X_test, y_test)}")
 
 if __name__ == "__main__":
-	one_point_two()
-	one_point_three()
-	one_point_four()
-	one_point_five()
+	#one_point_two()
+	#one_point_three()
+	#one_point_four()
+	#one_point_five()
+	one_point_six()
