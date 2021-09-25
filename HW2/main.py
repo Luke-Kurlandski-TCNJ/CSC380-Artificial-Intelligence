@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import load_iris
+from sklearn.datasets import load_digits
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
@@ -128,8 +129,35 @@ def one_point_four():
 	# Plot the iris predictions.
 	plot_iris("HW2/iris_svm_pred.png", X_test, pred)
 	plot_iris("HW2/iris_svm_truth.png", X_test, y_test)
+		
+def one_point_five():
+    # Load the digits data, partition into train and test splits.
+    X, y = load_digits(return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.25, random_state=0)
+
+    # The linear SVM classifier.
+    clf = LinearSVC(max_iter=100000)
+
+    # A K-Folds cross-validator that helps with partitioning the data.
+    kf = KFold(n_splits=5)
+
+    # Stores the accuracy of the classifier on each cross fold.
+    scores = []
+
+    # Perform the cross validation.
+    for train_index, test_index in kf.split(X_train):
+        X_trainCV, X_testCV = X_train[train_index], X_train[test_index]
+        y_trainCV, y_testCV = y_train[train_index], y_train[test_index]
+        clf.fit(X_trainCV, y_trainCV)
+        score = clf.score(X_testCV, y_testCV)
+        scores.append(score)
+
+    print(f"Digits | Average CV accuracy: {mean(scores)}")
+
 
 if __name__ == "__main__":
 	one_point_two()
 	one_point_three()
 	one_point_four()
+	one_point_five()
