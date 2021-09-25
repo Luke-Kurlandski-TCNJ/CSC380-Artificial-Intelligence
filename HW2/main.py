@@ -154,9 +154,6 @@ def one_point_five():
 
     print(f"Digits | Average CV accuracy: {mean(scores)}")
 
-    # Plot the digits predictions
-    plot_digits("digits_svm.png", clf.predict(X))
-
 
 if __name__ == "__main__":
 	one_point_two()
