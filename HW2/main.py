@@ -132,7 +132,7 @@ def one_point_four():
 		
 def one_point_five():
     # Load the digits data, partition into train and test splits.
-    digits = load_digits(return_X_y=True)
+    X, y = load_digits(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=0)
 
