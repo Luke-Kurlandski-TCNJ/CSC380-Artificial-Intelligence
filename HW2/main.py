@@ -173,9 +173,11 @@ def one_point_five():
 def one_point_six():
 	path_to_dataset = Path("/home/hpc/kurlanl1/CSC-380/CSC380-Artificial-Intelligence/UCIHARDataset/")
 
+	# The dataset is poorly formatted, so we run some quick sanitizations functions.
 	clean_data(path_to_dataset / "train/X_train.txt")
 	clean_data(path_to_dataset / "test/X_test.txt")
 
+	# Get the data from the files.
 	X_train = np.genfromtxt(path_to_dataset / "train/X_train_clean.txt", delimiter=',')
 	y_train = np.genfromtxt(path_to_dataset / "train/y_train.txt", delimiter=',')
 	X_test = np.genfromtxt(path_to_dataset / "test/X_test_clean.txt", delimiter=',')
@@ -206,5 +208,5 @@ if __name__ == "__main__":
 	#one_point_two()
 	#one_point_three()
 	#one_point_four()
-	#one_point_five()
-	one_point_six()
+	one_point_five()
+	#one_point_six()
