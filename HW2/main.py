@@ -148,11 +148,12 @@ def one_point_four():
 def one_point_five():
     # Load the digits data, partition into train and test splits.
     X, y = load_digits(return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, random_state=0)
+    #X_train, X_test, y_train, y_test = train_test_split(X, y, 
+    # 	test_size=0.25, random_state=0) # Use if performing CV on test set only
+    X_train, y_train = X, y # Use if performing CV on entire dataset
 
     # The linear SVM classifier.
-    clf = LinearSVC(max_iter=100000)
+    clf = LinearSVC(max_iter=1000000)
 
     # A K-Folds cross-validator that helps with partitioning the data.
     kf = KFold(n_splits=5)
@@ -161,27 +162,34 @@ def one_point_five():
     scores = []
 
     # Perform the cross validation.
-    for train_index, test_index in kf.split(X_train):
+    for fold, (train_index, test_index) in enumerate(kf.split(X_train)):
         X_trainCV, X_testCV = X_train[train_index], X_train[test_index]
         y_trainCV, y_testCV = y_train[train_index], y_train[test_index]
         clf.fit(X_trainCV, y_trainCV)
         score = clf.score(X_testCV, y_testCV)
         scores.append(score)
+        print(f"Accuracy for fold {fold} : {score}")
 
-    print(f"Digits | Average CV accuracy: {mean(scores)}")
+    print(f"Five-folded accuracies: {scores}")
+    print(f"Average over five-folds: {mean(scores)}")
 
-def one_point_six():
+def one_point_six(clean=False):
 	path_to_dataset = Path("/home/hpc/kurlanl1/CSC-380/CSC380-Artificial-Intelligence/UCIHARDataset/")
 
 	# The dataset is poorly formatted, so we run some quick sanitizations functions.
-	clean_data(path_to_dataset / "train/X_train.txt")
-	clean_data(path_to_dataset / "test/X_test.txt")
+	if clean:
+		clean_data(path_to_dataset / "train/X_train.txt")
+		clean_data(path_to_dataset / "test/X_test.txt")
 
 	# Get the data from the files.
 	X_train = np.genfromtxt(path_to_dataset / "train/X_train_clean.txt", delimiter=',')
 	y_train = np.genfromtxt(path_to_dataset / "train/y_train.txt", delimiter=',')
 	X_test = np.genfromtxt(path_to_dataset / "test/X_test_clean.txt", delimiter=',')
 	y_test = np.genfromtxt(path_to_dataset / "test/y_test.txt", delimiter=',')
+
+	# Use if performing CV on entire set
+	X_train = np.append(X_train, X_test, axis=0)
+	y_train = np.append(y_train, y_test, axis=0)
 
 	# The linear SVM classifier.
 	clf = LinearSVC(max_iter=100000)
@@ -193,20 +201,20 @@ def one_point_six():
 	scores = []
 
 	# Perform the cross validation.
-	for train_index, test_index in kf.split(X_train):
+	for fold, (train_index, test_index) in enumerate(kf.split(X_train)):
 		X_trainCV, X_testCV = X_train[train_index], X_train[test_index]
 		y_trainCV, y_testCV = y_train[train_index], y_train[test_index]
 		clf.fit(X_trainCV, y_trainCV)
 		score = clf.score(X_testCV, y_testCV)
 		scores.append(score)
+		print(f"Accuracy for fold {fold} : {score}")
 
-	print(f"Digits | Average CV accuracy: {mean(scores)}")
-
-	print(f"Net model accuracy: {clf.score(X_test, y_test)}")
+	print(f"Five-folded accuracies: {scores}")
+	print(f"Average over five-folds: {mean(scores)}")
 
 if __name__ == "__main__":
 	#one_point_two()
 	#one_point_three()
 	#one_point_four()
-	one_point_five()
-	#one_point_six()
+	#one_point_five()
+	one_point_six()

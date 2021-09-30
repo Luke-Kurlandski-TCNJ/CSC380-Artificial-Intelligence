@@ -359,11 +359,12 @@ def main():
 
     network = NeuralNetwork(numInputUnits=3, numHiddenUnits=2, numOutputUnits=1, lowerLimitForRandNums=-.05, upperLimitForRandNums=.05, learningRate=.1)
 
-    X = np.array([
-        [-1, 0, 0],
-        [-1, 0, 1],
-        [-1, 1, 0],
-        [-1, 1, 1],
+    X_and = np.array([
+        # bias, input A, input B, operation code...
+        [-1, 0, 0, 0, 0, 0],
+        [-1, 0, 1, 0, 0, 0],
+        [-1, 1, 0, 0, 0, 0],
+        [-1, 1, 1, 0, 0, 0],
     ])
     target_and = np.array([0, 0, 0, 1])
     target_or = np.array([0, 1, 1, 1])
