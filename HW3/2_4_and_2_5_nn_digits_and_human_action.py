@@ -12,10 +12,6 @@ from torch.utils.data import ConcatDataset, DataLoader, Dataset, SubsetRandomSam
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Using {} device".format(device))
 
-def get_X_y(start, end):
-    
-    return np.float32(X[start:end, :]), np.int64(Y[start:end])
-
 class CharacterRecognitionDataset(Dataset):
     def __init__(self, X, y):
         X, y = datasets.load_digits(return_X_y=True)
@@ -134,10 +130,14 @@ def human_activity_recognition():
     path_to_dataset = Path("/home/hpc/kurlanl1/CSC-380/CSC380-Artificial-Intelligence/UCIHARDataset/")
 
     # Get the data from the files.
-    X_train = np.genfromtxt(path_to_dataset / "train/X_train_clean.txt", delimiter=',')
-    y_train = np.genfromtxt(path_to_dataset / "train/y_train.txt", delimiter=',')
-    X_test = np.genfromtxt(path_to_dataset / "test/X_test_clean.txt", delimiter=',')
-    y_test = np.genfromtxt(path_to_dataset / "test/y_test.txt", delimiter=',')
+    X_train = np.genfromtxt(path_to_dataset / "train/X_train_clean.txt", 
+        delimiter=',')
+    y_train = np.genfromtxt(path_to_dataset / "train/y_train.txt", 
+        delimiter=',')
+    X_test = np.genfromtxt(path_to_dataset / "test/X_test_clean.txt", 
+        delimiter=',')
+    y_test = np.genfromtxt(path_to_dataset / "test/y_test.txt", 
+        delimiter=',')
     X = np.append(X_train, X_test, axis=0)
     y = np.append(y_train, y_test, axis=0)
     run_experiment(X, y)
