@@ -1,141 +1,213 @@
 """
-Source (open in private browser):
-	https://towardsdatascience.com/how-to-code-the-value-iteration-algorithm-for-reinforcement-learning-8fb806e117d1
+Homework 9: Value Iteration Algorithm for Markov Decision Process
 """
 
+from copy import deepcopy
 from pprint import pprint
-import numpy as np
+import sys
+from typing import Dict, List, Tuple
 
-'''
-==================================================
-Initial set up
-==================================================
-'''
-
+########################################################################
 # Hyperparameters
-SMALL_ENOUGH = .01
-GAMMA = 0.99
-NOISE = 0.2
-R = 100
+########################################################################
 
-# Define all states
-all_states=[]
-for i in range(3):
-	for j in range(3):
-			all_states.append((i,j))
+SMALL = .001		# small value to test for convergence
+DISCOUNT = 0.99		# discount factor (frequently referred to as gamma)
+NOISE = 0.2			# chance of making a random move
 
-# Define rewards for all states
-rewards = {}
-for i in all_states:
-	if i == (0,0):
-		rewards[i] = R
-	if i == (0,2):
-		rewards[i] = 10
-	else:
-		rewards[i] = -1
+########################################################################
+# Useful function
+########################################################################
 
-# Dictionnary of possible actions. We have two "end" states (1,2 and 2,2)
-actions = {
-	(0,0) : ('D', 'R'), 
-	(0,1) : ('D', 'L', 'R'),    
-	(0,2) : tuple(),
-	(1,0) : ('U', 'D', 'R'),
-	(1,1) : ('U', 'D', 'L', 'R'),
-	(1,2) : ('U', 'D', 'L'),
-	(2,0) : ('U', 'R'),
-	(2,1) : ('U', 'L', 'R'),
-	(2,2) : ('U', 'L')
-}
+def print_policy(p:Dict[Tuple[int, int], str]):
+	"""Print the policy in a grid-like format.
 
-# Define an initial policy
-policy = {}
-for s in actions.keys():
-	policy[s] = np.random.choice(actions[s])
+	Args:
+		p (Dict[Tuple[int, int], str]): the policy to print
+	"""
+	p[(0,2)] = 'X'
+	arr = [
+		[p[(0,0)], p[(0,1)], p[(0,2)]],
+		[p[(1,0)], p[(1,1)], p[(1,2)]],
+		[p[(2,0)], p[(2,1)], p[(2,2)]],
+	]
+	for a in arr:
+		print(a)
 
-# Define initial value function 
-V = {}
-for s in all_states:
-	if s in actions.keys():
-		V[s] = 0
-	if s == (0,0):
-		V[s] = R
-	if s == (0,2):
-		rewards[i] = 10
+########################################################################
+# Value Iteration Algorithm
+########################################################################
 
-print("-"*20)
-print(f"all_states:")
-pprint(all_states)
-print("-"*20)
-print(f"rewards:")
-pprint(rewards)
-print("-"*20)
-print(f"actions:")
-pprint(actions)
-print("-"*20)
-print(f"initial policy:")
-pprint(policy)
+def possible_next_states(
+	s:Tuple[int, int], 
+	a:str, 
+	actions:Dict[Tuple[int, int], Tuple[str,]]
+) -> List[Tuple[Tuple[int, int], float]]:
+	"""Return the possible next states from a given state and the 
+		corresponding probability of each state given an action.
 
-'''
-==================================================
-Value Iteration
-==================================================
-'''
+	Args:
+		s (Tuple[int, int]): current state
+		a (str): action to takem or attempt
+		action (Dict[Tuple[int, int], Tuple[str,]]): all actions for
+			the MDP
 
-iteration = 0
-smallest_biggest_change = None
+	Returns:
+		List[Tuple[int, int], float]: a list of possible next states and
+			the corresponding probability of that state
+	"""
+	if s not in actions:
+		return []
+		
+	possible_next_states = []
 
-while True:
-	if iteration != 0 and iteration % 10000 == 0:
-		print("-"*20)
-		print(iteration)
-		print(f"policy:")
-		pprint(policy)
-	biggest_change = 0
-	for s in all_states:            
-		if s in policy:
-			
-			old_v = V[s]
-			new_v = 0
-			
+	# Add the attempted state and the prob of making the desired move
+	if a == 'U':
+		possible_next_states.append(((s[0]-1, s[1]), 1-NOISE))
+	elif a == 'D':
+		possible_next_states.append(((s[0]+1, s[1]), 1-NOISE))
+	elif a == 'L':
+		possible_next_states.append(((s[0], s[1]-1), 1-NOISE))
+	elif a == 'R':
+		possible_next_states.append(((s[0], s[1]+1), 1-NOISE))
+
+	# Add the other possible states and the prob of undesired move
+	undesired = NOISE / (len(actions[s]) - 1)
+	for option in actions[s]:
+		if option != a:
+			if option == 'U':
+				possible_next_states.append(((s[0]-1, s[1]), undesired))
+			elif option == 'D':
+				possible_next_states.append(((s[0]+1, s[1]), undesired))
+			elif option == 'L':
+				possible_next_states.append(((s[0], s[1]-1), undesired))
+			elif option == 'R':
+				possible_next_states.append(((s[0], s[1]+1), undesired))
+
+	return possible_next_states
+
+def value_iteration(
+	states:List[Tuple[int, int]], 
+	actions:Dict[Tuple[int, int], Tuple[str,]], 
+	rewards:Dict[Tuple[int, int], int], 
+	policy:Dict[Tuple[int, int], str], 
+	value_function:Dict[Tuple[int, int], int]
+) -> Dict[Tuple[int, int], int]:
+	"""Perform the value iteration algorithm to find the optimal policy.
+
+	Args:
+		states (List[Tuple[int, int]]): states for MPD
+		actions (Dict[Tuple[int, int], Tuple[str,]]): actions for MPD
+		rewards (Dict[Tuple[int, int], int]): rewards for MPD
+		policy (Dict[Tuple[int, int], str]): intitial policy for MPD
+		value_function (Dict[Tuple[int, int], int]): initial value 
+			function for MPD
+
+	Returns:
+		Dict[Tuple[int, int], str]: final policy for MPD
+	"""
+
+	policy = deepcopy(policy)
+
+	# Do until stopping condition occurs
+	delta = sys.maxsize
+	while delta > SMALL:
+		delta = 0
+
+		# Loop through every state that has an action, ie, not terminal
+		for s in states:
+			if s not in actions: 
+				continue
+
+			v = value_function[s]				# current value function
+			max_over_actions = -1 * sys.maxsize	# storage for loop
+
+			# Loop through every possible action for the current state
 			for a in actions[s]:
-				if a == 'U':
-					nxt = [s[0]-1, s[1]]
-				if a == 'D':
-					nxt = [s[0]+1, s[1]]
-				if a == 'L':
-					nxt = [s[0], s[1]-1]
-				if a == 'R':
-					nxt = [s[0], s[1]+1]
-
-				# Choose a new random action to do (transition probability)
-				random_1 = np.random.choice([i for i in actions[s] if i != a])
-				if random_1 == 'U':
-					act = [s[0]-1, s[1]]
-				if random_1 == 'D':
-					act = [s[0]+1, s[1]]
-				if random_1 == 'L':
-					act = [s[0], s[1]-1]
-				if random_1 == 'R':
-					act = [s[0], s[1]+1]
-
-				# Calculate the value
-				nxt = tuple(nxt)
-				act = tuple(act)
-				v = rewards[s] + (GAMMA * ((1-NOISE)* V[nxt] + (NOISE * V[act]))) 
-				if v > new_v: # Is this the best action so far? If so, keep it
-					new_v = v
+				# Compute the sum over the next possible states given
+					# corresponding probabilities of occuring
+				sum_over_next_states = 0
+				for s_, p in possible_next_states(s, a, actions):
+					sum_over_next_states += p * (rewards[s_] \
+						+ DISCOUNT * value_function[s_])
+				# If this is the optimal action encountered thus far,
+					# update the policy and the tracking variable
+				if sum_over_next_states > max_over_actions:
 					policy[s] = a
+					max_over_actions = sum_over_next_states
+			
+			# Update the value function and the stopping value
+			value_function[s] = max_over_actions
+			delta = max(delta, abs(v - value_function[s]))
 
-	   # Save the best of all actions for the state                                
-			V[s] = new_v
-			biggest_change = max(biggest_change, np.abs(old_v - V[s]))
+	return policy
 
-	# See if the loop should stop now  
-	smallest_biggest_change = biggest_change if smallest_biggest_change is None else min([smallest_biggest_change, biggest_change])
-	if biggest_change < SMALL_ENOUGH:
-		break
-	iteration += 1
+########################################################################
+# Set up the Markov Decision Process and run the algorithm
+########################################################################
 
-print("-"*20)
-print(f"end policy:")
-pprint(policy)
+def main(r:int):
+
+	# Define all states
+	states = [
+		(0,0), (0,1), (0,2),
+		(1,0), (1,1), (1,2),
+		(2,0), (2,1), (2,2),
+	]
+
+	# Define rewards for all states
+	rewards = {
+		(0,0) : r,  (0,1) : -1, (0,2) : 10,
+		(1,0) : -1, (1,1) : -1, (1,2) : -1,
+		(2,0) : -1, (2,1) : -1, (2,2) : -1,
+	}
+
+	value_function = {
+		(0,0) : 0, (0,1) : 0, (0,2) : 0,
+		(1,0) : 0, (1,1) : 0, (1,2) : 0,
+		(2,0) : 0, (2,1) : 0, (2,2) : 0,
+	}
+
+	# Dictionnary of possible actions, (0,2) is a terminal state
+	# This is viewed from the perspective of 0,0 being the top left
+	actions = {
+		(0,0) : ('D', 'R'), 
+		(0,1) : ('D', 'L', 'R'),    
+		(1,0) : ('U', 'D', 'R'),
+		(1,1) : ('U', 'D', 'L', 'R'),
+		(1,2) : ('U', 'D', 'L'),
+		(2,0) : ('U', 'R'),
+		(2,1) : ('U', 'L', 'R'),
+		(2,2) : ('U', 'L')
+	}
+
+	# Define an initial policy
+	policy = {
+		(0,0) : 'D',
+		(0,1) : 'D',  
+		(1,0) : 'D',
+		(1,1) : 'D',
+		(1,2) : 'D',
+		(2,0) : 'D',
+		(2,1) : 'D',
+		(2,2) : 'D',
+	}
+
+	policy = value_iteration(
+		states, 
+		actions, 
+		rewards, 
+		policy, 
+		value_function
+	)
+
+	# Print the value function and the policy
+	print("-"*20)
+	print(r)
+	print_policy(policy)
+
+if __name__ == "__main__":
+	main(100)
+	main(-3)
+	main(0)
+	main(3)
